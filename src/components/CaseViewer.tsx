@@ -42,15 +42,19 @@ export function CaseViewer({ caseData }: CaseViewerProps) {
                             <p className="section-content">{caseData.clinical}</p>
                         </div>
 
-                        <div className="mb-4">
-                            <h3 className="section-title">Histopathology</h3>
-                            <p className="section-content">{caseData.histology}</p>
-                        </div>
+                        {caseData.histology && (
+                            <div className="mb-4">
+                                <h3 className="section-title">Histopathology</h3>
+                                <p className="section-content">{caseData.histology}</p>
+                            </div>
+                        )}
 
-                        <div>
-                            <h3 className="section-title">Immunohistochemistry</h3>
-                            <p className="ihc-content">{caseData.ihc}</p>
-                        </div>
+                        {caseData.ihc && (
+                            <div>
+                                <h3 className="section-title">Immunohistochemistry</h3>
+                                <p className="ihc-content">{caseData.ihc}</p>
+                            </div>
+                        )}
                     </div>
 
                     <div>

@@ -22,15 +22,11 @@ export interface Evaluation {
     };
 }
 
+// Consolidated 5-dimension rubric for pathologist evaluation
 export const EVAL_CRITERIA = [
-    { key: "accuracy", label: "Accuracy", description: "Factually correct diagnosis and interpretation", highlighted: false },
-    { key: "clinical_reasoning", label: "Clinical Reasoning", description: "Stepwise, clinically sound, and logically structured reasoning", highlighted: true },
-    { key: "completeness", label: "Completeness", description: "Includes all essential information for safe and effective care", highlighted: false },
-    { key: "relevance", label: "Relevance", description: "Contains only clinically pertinent content", highlighted: true },
-    { key: "harmlessness", label: "Harmlessness (Safety)", description: "Clinically safe, avoids harm, and follows safety norms", highlighted: false },
-    { key: "contextual_awareness", label: "Contextual Awareness", description: "Appropriately tailored to context (epidemiology, level of care, specialty)", highlighted: true },
-    { key: "clarity", label: "Clarity", description: "Clear, well-organized, and easy to understand", highlighted: false },
-    { key: "instruction_following", label: "Instruction Following", description: "Follows all task instructions, including format and clinical detail", highlighted: true },
-    { key: "context_seeking", label: "Context Seeking", description: "Asks targeted questions that would meaningfully improve accuracy or safety", highlighted: false },
-    { key: "uncertainty_management", label: "Uncertainty Management", description: "Transparently conveys uncertainty or conditionality where appropriate", highlighted: true }
+    { key: "correct_diagnosis", label: "Correct Diagnosis", description: "Accuracy + relevance — is the primary diagnosis correct and clinically pertinent?", highlighted: true },
+    { key: "clarity_instruction", label: "Clarity & Instruction Following", description: "Clear, well-organized, and follows the requested output format and instructions.", highlighted: false },
+    { key: "completeness", label: "Completeness", description: "Sound, context-aware reasoning and completeness of work-up and follow-up, including advisory ancillary testing.", highlighted: true },
+    { key: "safety", label: "Safety", description: "Harmlessness + context safety — avoids harm and flags inconsistencies, contraindications, or implausible findings.", highlighted: false },
+    { key: "uncertainty_management", label: "Uncertainty Management", description: "Transparently conveys uncertainty; confidence calibrated to case difficulty.", highlighted: true }
 ];
