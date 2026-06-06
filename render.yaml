@@ -1,0 +1,16 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Deploys the Next.js static export (./out) as a Render Static Site.
+# In Render: New > Blueprint > connect this repo > Apply.
+services:
+  - type: web
+    name: aiims-eval
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./out
+    envVars:
+      - key: NODE_VERSION
+        value: "22.11.0"
+    headers:
+      - path: /cases/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
