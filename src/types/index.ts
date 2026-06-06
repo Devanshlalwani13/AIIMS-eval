@@ -11,6 +11,7 @@ export interface Case {
     expectedBehavior: string;
     images: string[];
     llmResponses: Record<string, string>;
+    outputOrder?: string[]; // blinded display order of model keys -> "Output 1", "Output 2", ...
 }
 
 export interface Evaluation {

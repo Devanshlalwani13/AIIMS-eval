@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { CaseViewer } from '@/components/CaseViewer';
-import { ResponseEvaluator } from '@/components/ResponseEvaluator';
+import { OutputPanel } from '@/components/OutputPanel';
 import { Dashboard } from '@/components/Dashboard';
 import { Evaluation } from '@/types';
 import casesData from '@/data/cases.json';
@@ -17,68 +17,79 @@ const CASES = casesData as any[];
 export default function App() {
     const [currentView, setCurrentView] = useState('review');
     const [currentCaseIndex, setCurrentCaseIndex] = useState(0);
-    // Flatten all model responses to find unique model names across all cases (or just take 1st case)
-    const modelNames = CASES.length > 0 ? Object.keys(CASES[0].llmResponses || {}) : [];
-    const [currentModelIndex, setCurrentModelIndex] = useState(0);
 
     const [ratings, setRatings] = useState<Evaluation>({});
+    const [comments, setComments] = useState<Record<string, Record<string, string>>>({});
     const [showGoldLabel, setShowGoldLabel] = useState(false);
     const [isClient, setIsClient] = useState(false);
 
     // Load from localStorage on mount
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         setIsClient(true);
         const saved = localStorage.getItem('clinical_eval_ratings');
         if (saved) {
-            try {
-                setRatings(JSON.parse(saved));
-            } catch (e) {
-                console.error("Failed to load ratings", e);
-            }
+            try { setRatings(JSON.parse(saved)); } catch (e) { console.error("Failed to load ratings", e); }
+        }
+        const savedComments = localStorage.getItem('clinical_eval_comments');
+        if (savedComments) {
+            try { setComments(JSON.parse(savedComments)); } catch (e) { console.error("Failed to load comments", e); }
         }
     }, []);
 
-    // Save to localStorage whenever ratings change
+    // Persist
     useEffect(() => {
         if (isClient && Object.keys(ratings).length > 0) {
             localStorage.setItem('clinical_eval_ratings', JSON.stringify(ratings));
         }
     }, [ratings, isClient]);
+    useEffect(() => {
+        if (isClient && Object.keys(comments).length > 0) {
+            localStorage.setItem('clinical_eval_comments', JSON.stringify(comments));
+        }
+    }, [comments, isClient]);
 
     const currentCase = CASES[currentCaseIndex];
-    const currentModel = modelNames[currentModelIndex];
+    // Blinded display order of models for this case -> Output 1, Output 2, ...
+    const outputModels: string[] = (currentCase?.outputOrder && currentCase.outputOrder.length)
+        ? currentCase.outputOrder
+        : Object.keys(currentCase?.llmResponses || {});
 
-    const handleRatingChange = (criterion: string, value: number) => {
+    const handleRatingChange = (model: string, criterion: string, value: number) => {
         setRatings(prev => {
             const caseRatings = prev[currentCase.id] || {};
-            const modelRatings = caseRatings[currentModel] || {};
-
+            const modelRatings = caseRatings[model] || {};
             return {
                 ...prev,
                 [currentCase.id]: {
                     ...caseRatings,
-                    [currentModel]: {
-                        ...modelRatings,
-                        [criterion]: value
-                    }
+                    [model]: { ...modelRatings, [criterion]: value }
                 }
             };
         });
     };
 
-    const handleDownload = () => {
-        // Flatten data for Excel
-        const rows: any[] = [];
+    const handleCommentChange = (model: string, value: string) => {
+        setComments(prev => ({
+            ...prev,
+            [currentCase.id]: { ...(prev[currentCase.id] || {}), [model]: value }
+        }));
+    };
 
+    const handleDownload = () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rows: any[] = [];
         CASES.forEach(c => {
-            modelNames.forEach(m => {
+            const models: string[] = (c.outputOrder && c.outputOrder.length) ? c.outputOrder : Object.keys(c.llmResponses || {});
+            models.forEach((m, idx) => {
                 const r = ratings[c.id]?.[m] || {};
                 rows.push({
                     CaseID: c.id,
                     CaseTitle: c.title,
-                    Model: m,
-                    ...r // Spreads accuracy: 2, clarity: 1, etc.
+                    Section: c.section,
+                    OutputLabel: `Output ${idx + 1}`,  // what the evaluator saw
+                    Model: m,                            // de-anonymized real model
+                    ...r,
+                    Comments: comments[c.id]?.[m] || ''
                 });
             });
         });
@@ -91,8 +102,11 @@ export default function App() {
 
     if (!isClient) return null; // Avoid hydration mismatch
 
-    // Calculate Progress
-    const progressPercent = Math.round((((currentCaseIndex * modelNames.length) + currentModelIndex) / (CASES.length * modelNames.length)) * 100);
+    const progressPercent = Math.round((currentCaseIndex / CASES.length) * 100);
+    const scoredOutputs = outputModels.filter(m => {
+        const r = ratings[currentCase.id]?.[m];
+        return r && Object.keys(r).length > 0;
+    }).length;
 
     return (
         <div className="flex h-screen w-screen overflow-hidden">
@@ -108,7 +122,7 @@ export default function App() {
                             <div className="progress-container">
                                 <div className="progress-header">
                                     <span className="progress-text">
-                                        Case {currentCaseIndex + 1} of {CASES.length} | Model {currentModelIndex + 1} of {modelNames.length}
+                                        Case {currentCaseIndex + 1} of {CASES.length}
                                     </span>
                                     <span className="progress-text flex items-center gap-4">
                                         <span className="progress-percent">{progressPercent}% complete</span>
@@ -128,10 +142,7 @@ export default function App() {
 
                             {/* Gold label toggle */}
                             <div className="mb-6">
-                                <button
-                                    onClick={() => setShowGoldLabel(!showGoldLabel)}
-                                    className="gold-label-toggle"
-                                >
+                                <button onClick={() => setShowGoldLabel(!showGoldLabel)} className="gold-label-toggle">
                                     {showGoldLabel ? 'Hide' : 'Show'} Gold Standard
                                 </button>
                                 {showGoldLabel && (
@@ -142,68 +153,46 @@ export default function App() {
                                 )}
                             </div>
 
-                            {/* Evaluator */}
-                            <ResponseEvaluator
-                                modelName={`Model ${String.fromCharCode(65 + currentModelIndex)}`}
-                                response={currentCase.llmResponses[currentModel]}
-                                currentRatings={ratings[currentCase.id]?.[currentModel] || {}}
-                                onRatingChange={handleRatingChange}
-                            />
+                            {/* All model outputs for this case — blinded & collapsible */}
+                            <div className="outputs-header">
+                                <h3 className="section-title">Model Outputs ({outputModels.length}) — blinded</h3>
+                                <span className="outputs-progress">{scoredOutputs}/{outputModels.length} evaluated</span>
+                            </div>
 
+                            {outputModels.map((model, idx) => (
+                                <OutputPanel
+                                    key={model}
+                                    label={`Output ${idx + 1}`}
+                                    response={currentCase.llmResponses[model]}
+                                    currentRatings={ratings[currentCase.id]?.[model] || {}}
+                                    onRatingChange={(criterion, value) => handleRatingChange(model, criterion, value)}
+                                    comment={comments[currentCase.id]?.[model] || ''}
+                                    onCommentChange={(value) => handleCommentChange(model, value)}
+                                />
+                            ))}
                         </div>
 
-                        {/* Navigation */}
+                        {/* Navigation — per case */}
                         <div className="card shrink-0 mt-4">
                             <div className="nav-footer">
                                 <button
-                                    onClick={() => {
-                                        if (currentModelIndex > 0) {
-                                            setCurrentModelIndex(currentModelIndex - 1);
-                                        } else if (currentCaseIndex > 0) {
-                                            setCurrentCaseIndex(currentCaseIndex - 1);
-                                            setCurrentModelIndex(modelNames.length - 1);
-                                        }
-                                    }}
-                                    disabled={currentCaseIndex === 0 && currentModelIndex === 0}
+                                    onClick={() => { if (currentCaseIndex > 0) setCurrentCaseIndex(currentCaseIndex - 1); }}
+                                    disabled={currentCaseIndex === 0}
                                     className="nav-btn-secondary"
                                 >
-                                    ← Previous
+                                    ← Previous Case
                                 </button>
 
                                 <div className="model-indicators">
-                                    {modelNames.map((model, idx) => {
-                                        // Check if scored
-                                        const isScored = ratings[currentCase.id]?.[model] && Object.keys(ratings[currentCase.id][model]).length > 0;
-                                        return (
-                                            <button
-                                                key={model}
-                                                onClick={() => setCurrentModelIndex(idx)}
-                                                className={`model-dot ${idx === currentModelIndex
-                                                    ? 'model-dot-active'
-                                                    : isScored
-                                                        ? 'model-dot-complete'
-                                                        : 'model-dot-pending'
-                                                    }`}
-                                            >
-                                                {String.fromCharCode(65 + idx)}
-                                            </button>
-                                        );
-                                    })}
+                                    <span className="progress-text">{scoredOutputs}/{outputModels.length} outputs scored</span>
                                 </div>
 
                                 <button
-                                    onClick={() => {
-                                        if (currentModelIndex < modelNames.length - 1) {
-                                            setCurrentModelIndex(currentModelIndex + 1);
-                                        } else if (currentCaseIndex < CASES.length - 1) {
-                                            setCurrentCaseIndex(currentCaseIndex + 1);
-                                            setCurrentModelIndex(0);
-                                        }
-                                    }}
+                                    onClick={() => { if (currentCaseIndex < CASES.length - 1) setCurrentCaseIndex(currentCaseIndex + 1); }}
+                                    disabled={currentCaseIndex === CASES.length - 1}
                                     className="nav-btn-primary"
                                 >
-                                    {currentModelIndex < modelNames.length - 1 ? 'Next Model →' :
-                                        currentCaseIndex < CASES.length - 1 ? 'Next Case →' : 'Complete ✓'}
+                                    {currentCaseIndex < CASES.length - 1 ? 'Next Case →' : 'Complete ✓'}
                                 </button>
                             </div>
                         </div>
