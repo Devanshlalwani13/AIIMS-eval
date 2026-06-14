@@ -28,8 +28,7 @@ export function ConsentGate({ onConsent }: { onConsent: (rater: Rater) => void }
         <div className="consent-overlay">
             <div className="consent-card">
                 <div className="card-header">
-                    <h1 className="consent-title">HPLA-100 — Histopathology LLM Evaluation</h1>
-                    <p className="consent-subtitle">Informed consent — please read before continuing</p>
+                    <h1 className="consent-title">HPLA-100 Histopathology LLM Evaluation</h1>
                 </div>
                 <div className="card-body">
                     <div className="consent-statement">
@@ -93,6 +92,11 @@ export function ConsentGate({ onConsent }: { onConsent: (rater: Rater) => void }
                     <button onClick={handleBegin} disabled={!canBegin} className="consent-begin-btn">
                         Begin evaluation
                     </button>
+
+                    <div className="consent-footer">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/turocrates.png" alt="Turocrates.ai" className="consent-logo" />
+                    </div>
                 </div>
             </div>
         </div>

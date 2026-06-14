@@ -961,3 +961,17 @@ body {
 }
 .submit-ok { background-color: #ecfdf5; color: #065f46; }
 .submit-error { background-color: #fef2f2; color: #991b1b; }
+
+.consent-footer {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid #eef0f3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.consent-logo {
+  height: 30px;
+  width: auto;
+  opacity: 0.9;
+}
