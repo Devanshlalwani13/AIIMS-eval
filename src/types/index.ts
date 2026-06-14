@@ -22,6 +22,13 @@ export interface Evaluation {
     };
 }
 
+// Rater identity captured at the consent gate (localStorage key "hpla_rater").
+export interface Rater {
+    email: string;
+    name?: string;
+    consentedAt: string; // ISO timestamp
+}
+
 // Consolidated 5-dimension rubric for pathologist evaluation
 export const EVAL_CRITERIA = [
     { key: "correct_diagnosis", label: "Correct Diagnosis", description: "Accuracy + relevance — is the primary diagnosis correct and clinically pertinent?", highlighted: true },
