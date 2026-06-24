@@ -140,7 +140,7 @@ export default function App() {
                 body: JSON.stringify({
                     rater: { email: rater.email, name: rater.name || '' },
                     submittedAt: new Date().toISOString(),
-                    app: 'HPLA-100',
+                    app: 'Turo-HPLA-100',
                     rows,
                 }),
             });

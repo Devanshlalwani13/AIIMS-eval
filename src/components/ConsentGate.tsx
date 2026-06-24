@@ -28,14 +28,14 @@ export function ConsentGate({ onConsent }: { onConsent: (rater: Rater) => void }
         <div className="consent-overlay">
             <div className="consent-card">
                 <div className="card-header">
-                    <h1 className="consent-title">HPLA-100 Histopathology LLM Evaluation</h1>
+                    <h1 className="consent-title">Turo-HPLA-100 Histopathology LLM Evaluation</h1>
                 </div>
                 <div className="card-body">
                     <div className="consent-statement">
                         <p>
                             You are invited to take part in a research study as a qualified pathologist
                             rating anonymized AI-generated reports against a histopathology benchmark
-                            (HPLA-100). Participation is entirely <strong>voluntary</strong> and you may
+                            (Turo-HPLA-100). Participation is entirely <strong>voluntary</strong> and you may
                             stop at any time without consequence.
                         </p>
                         <p>
