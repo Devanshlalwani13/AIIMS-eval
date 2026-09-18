@@ -41,7 +41,7 @@ export function ConsentGate({ onConsent }: { onConsent: (rater: Rater) => void }
                         <p>
                             Your ratings, comments, and email address will be collected and used in
                             <strong> anonymized, aggregate form</strong> for an academic benchmark study
-                            (intended for ECDP 2026). Your email is used only to attribute and
+                            (intended for ASDP 2026). Your email is used only to attribute and
                             de-duplicate submissions and will not be published.
                         </p>
                         <p>
